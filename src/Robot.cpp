@@ -20,12 +20,7 @@ void Robot::RobotInit() {
 void Robot::visionLoop() {
 	while(true){
 		if(vs->isActive && vs->hasSetup){
-			std::chrono::milliseconds ms = std::chrono::duration_cast< std::chrono::milliseconds >(
-					std::chrono::system_clock::now().time_since_epoch()
-			);
-			long over = ms.count()-lastHit;
-			lastHit = ms.count();
-			frc::SmartDashboard::PutNumber("Vision Loop Speed (ms)",over);
+
 			visionUpdater();
 		}
 	}
@@ -36,6 +31,12 @@ void Robot::visionUpdater() {
 	}
 	if(vs->isConnected()){
 		if(VisionServer::DEBUG_MODE) std::cout<< "connected..." <<std::endl;
+		std::chrono::milliseconds ms = std::chrono::duration_cast< std::chrono::milliseconds >(
+				std::chrono::system_clock::now().time_since_epoch()
+		);
+		long over = ms.count()-lastHit;
+		lastHit = ms.count();
+		frc::SmartDashboard::PutNumber("Vision Loop Speed (ms)",over);
 		vs->runServerRoutine();
 	}else{
 		if(VisionServer::DEBUG_MODE) std::cout<< "camera is not responding."<<std::endl;
