@@ -7,7 +7,6 @@
 
 #include <DareCheesecake/VisionServer.h>
 #include "../json.hpp"
-#include "../Robot.h"
 using json = nlohmann::json;
 
 VisionServer::VisionServer(){
@@ -79,7 +78,6 @@ void VisionServer::setupServer(){
 
 	}else{
 		if(VisionServer::DEBUG_MODE) std::cout << "error binding. err: "<< errno <<std::endl;
-		hasSetup=false;
 	}
 }
 bool VisionServer::isConnected() {
@@ -93,6 +91,10 @@ void VisionServer::reqAppRestart(){
 void VisionServer::findCamera(){
 
 	sockaddr_in clientAddr;
+	fd_set readset;
+	timeval time;
+	time.tv_sec=4;
+	time.tv_usec=0;
 	if(VisionServer::DEBUG_MODE) std::cout << "Finding Camera..." << std::endl;
 	socklen_t sin_size=sizeof(struct sockaddr_in);
 	clientfd=accept(socketfd,(struct sockaddr*)&clientAddr, &sin_size);
@@ -103,26 +105,20 @@ void VisionServer::findCamera(){
 }
 
 void VisionServer::runServerRoutine() {
-
 	bool didHeartbeat = false;
 	bool didTargets = false;
 	char receivedStr[2048];
 	//fcntl(socketfd, F_GETFL) & ;
-	int recvStat = recv(clientfd,receivedStr,2048,0);
+	recv(clientfd,receivedStr,2048,0);
 
-	if(VisionServer::DEBUG_MODE && recvStat == -1) {
+	if(VisionServer::DEBUG_MODE) {
 		std::cout << "-----------------------"<<std::endl;
 		std::cout << "errno: " << errno<<std::endl;
 		std::cout << "-----------------------"<<std::endl;
 	}
 	if(VisionServer::DEBUG_MODE) std::cout << "RAW: " << receivedStr<<std::endl;
 	std::vector<std::string> messages = split(std::string(receivedStr),'\n');
-	std::chrono::milliseconds ms = std::chrono::duration_cast< std::chrono::milliseconds >(
-			std::chrono::system_clock::now().time_since_epoch()
-	);
-	long over = ms.count()-Robot::lastHit;
-	Robot::lastHit = ms.count();
-	frc::SmartDashboard::PutNumber("Vision Loop Speed (ms)",over);
+
 	for(int i = 0; i < messages.size() && (!didTargets||!didHeartbeat); i++) {
 		std::string pch = messages[i];
 		//pch is now message.
@@ -133,7 +129,7 @@ void VisionServer::runServerRoutine() {
 			std::string pchparsed(pch);
 			j = json::parse(pchparsed);
 			std::string type = j["type"];
-			std::string message = j["message"];// {"key":"value"}
+			std::string message = j["message"];
 			if(type == "targets" && !didTargets){
 				didTargets = true;
 				targets.clear(); // wipe targets.
@@ -156,7 +152,7 @@ void VisionServer::runServerRoutine() {
 				}
 			}else if(type == "heartbeat" && !didHeartbeat){
 				didHeartbeat = true;
-
+				// NYI: respond to heartbeat
 				if(VisionServer::DEBUG_MODE) std::cout<<"heartbeat"<<std::endl;
 				char* heartbeatmsg = "{\"type\":\"heartbeat\",\"message\":\"{}\"}";
 				int writeStatus = send(clientfd,heartbeatmsg,strlen(heartbeatmsg),0);

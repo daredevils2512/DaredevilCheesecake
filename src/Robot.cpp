@@ -20,10 +20,13 @@ void Robot::RobotInit() {
 void Robot::visionLoop() {
 	while(true){
 		if(vs->isActive && vs->hasSetup){
+			std::chrono::milliseconds ms = std::chrono::duration_cast< std::chrono::milliseconds >(
+					std::chrono::system_clock::now().time_since_epoch()
+			);
+			long over = ms.count()-lastHit;
+			lastHit = ms.count();
+			frc::SmartDashboard::PutNumber("Vision Loop Speed (ms)",over);
 			visionUpdater();
-		}else if(vs->isActive && !vs->hasSetup){
-			if(VisionServer::DEBUG_MODE) std::cout<< "!!! SERVER SETUP NEVER SUCCEEDED! (binding issue?) !!!" <<std::endl;
-			vs->setupServer();
 		}
 	}
 }
