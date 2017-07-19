@@ -4,7 +4,6 @@ long Robot::lastHit = 0;
 std::shared_ptr<VisionServer> Robot::vs;
 std::unique_ptr<frc::Command> autonomousCommand;
 frc::SendableChooser<frc::Command*> chooser;
-int Robot::failConnectCount;
 void Robot::RobotInit() {
 	chooser.AddDefault("Default Auto", new ExampleCommand());
 	// chooser.AddObject("My Auto", new MyAutoCommand());
@@ -12,7 +11,7 @@ void Robot::RobotInit() {
 	vs.reset(new VisionServer());
 	std::cout<<"Setting up VisionServer"<<std::endl;
 	Robot::vs->setupServer();
-	std::thread(visionLoop).detach();
+	std::thread(VisionServer::visionLoop).detach();
 }
 
 /**
@@ -20,49 +19,7 @@ void Robot::RobotInit() {
  * You can use it to reset any subsystem information you want to clear when
  * the robot is disabled.
  */
-void Robot::visionLoop() {
-	while(true){
-		if(vs->hasSetup){
-			visionUpdater();
-		}
-	}
-}
-void Robot::visionUpdater() {
-	std::chrono::milliseconds ms = std::chrono::duration_cast< std::chrono::milliseconds >(
-			std::chrono::system_clock::now().time_since_epoch()
-	);
-	if(!vs->isConnected()){
 
-		vs->findCamera();
-
-	}
-	if(vs->isConnected()){
-		if(VisionServer::DEBUG_MODE) std::cout<< "connected..." <<std::endl;
-
-		vs->runServerRoutine();
-		failConnectCount = 0;
-
-	}else{
-		if(VisionServer::DEBUG_MODE) std::cout<< "camera is not responding."<<std::endl;
-		std::chrono::milliseconds ms = std::chrono::duration_cast< std::chrono::milliseconds >(
-								std::chrono::system_clock::now().time_since_epoch()
-						);
-		if(failConnectCount > 5){
-			if(AdbBridge::reversePortForward(vs->port,vs->port)){
-				vs->setupCamera();
-			}
-		}
-		failConnectCount++;
-		long timeTaken = std::chrono::duration_cast< std::chrono::milliseconds >(
-										std::chrono::system_clock::now().time_since_epoch()
-								).count() - ms.count();
-								frc::SmartDashboard::PutNumber("debug adb check (ms)",timeTaken);
-	}
-	long timeTaken = std::chrono::duration_cast< std::chrono::milliseconds >(
-			std::chrono::system_clock::now().time_since_epoch()
-	).count() - ms.count();
-	frc::SmartDashboard::PutNumber("debug timeTaken (ms)",timeTaken);
-}
 
 void Robot::DisabledInit() {
 

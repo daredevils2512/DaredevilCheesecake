@@ -6,7 +6,8 @@
  */
 
 #include <DareCheesecake/VisionServer.h>
-#include "../json.hpp"
+#include "../Robot.h"
+#include "json.hpp"
 using json = nlohmann::json;
 
 VisionServer::VisionServer(){
@@ -175,4 +176,48 @@ void VisionServer::runServerRoutine() {
 	long diff = current - lastReceived;
 	frc::SmartDashboard::PutNumber("Millis between updates",diff);
 	lastReceived = current;
+}
+void VisionServer::visionLoop() {
+	while(true){
+		if(Robot::vs->hasSetup){
+			visionUpdater();
+		}
+	}
+}
+int VisionServer::failConnectCount;
+void VisionServer::visionUpdater() {
+	std::chrono::milliseconds ms = std::chrono::duration_cast< std::chrono::milliseconds >(
+			std::chrono::system_clock::now().time_since_epoch()
+	);
+	if(!Robot::vs->isConnected()){
+
+		Robot::vs->findCamera();
+
+	}
+	if(Robot::vs->isConnected()){
+		if(VisionServer::DEBUG_MODE) std::cout<< "connected..." <<std::endl;
+
+		Robot::vs->runServerRoutine();
+		failConnectCount = 0;
+
+	}else{
+		if(VisionServer::DEBUG_MODE) std::cout<< "camera is not responding."<<std::endl;
+		std::chrono::milliseconds ms = std::chrono::duration_cast< std::chrono::milliseconds >(
+								std::chrono::system_clock::now().time_since_epoch()
+						);
+		if(failConnectCount > 5){
+			if(AdbBridge::reversePortForward(Robot::vs->port,Robot::vs->port)){
+				Robot::vs->setupCamera();
+			}
+		}
+		failConnectCount++;
+		long timeTaken = std::chrono::duration_cast< std::chrono::milliseconds >(
+										std::chrono::system_clock::now().time_since_epoch()
+								).count() - ms.count();
+								frc::SmartDashboard::PutNumber("debug adb check (ms)",timeTaken);
+	}
+	long timeTaken = std::chrono::duration_cast< std::chrono::milliseconds >(
+			std::chrono::system_clock::now().time_since_epoch()
+	).count() - ms.count();
+	frc::SmartDashboard::PutNumber("debug timeTaken (ms)",timeTaken);
 }

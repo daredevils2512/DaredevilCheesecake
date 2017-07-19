@@ -45,6 +45,11 @@ public:
 	void reqAppRestart();
 	void findCamera();
 	void runServerRoutine();
+
+	static void visionLoop();
+	static void visionUpdater();
+
+
 	std::vector<TargetInfo> targets;
 	bool hasSetup;
 	bool isActive;
@@ -56,6 +61,7 @@ private:
 	bool mIsConnected;
 	double lastMessageReceivedTime;
 	long lastReceived = 0;
+	static int failConnectCount;
 	template<typename Out>
 	void splitr(const std::string &s, char delim, Out result);
 	std::vector<std::string> split(const std::string &s, char delim);

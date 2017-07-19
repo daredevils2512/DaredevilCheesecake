@@ -27,8 +27,6 @@ public:
 	 * You can use it to reset any subsystem information you want to clear when
 	 * the robot is disabled.
 	 */
-	static void visionLoop();
-	static void visionUpdater();
 
 	void DisabledInit() override;
 
@@ -58,7 +56,7 @@ public:
 private:
 	std::unique_ptr<frc::Command> autonomousCommand;
 	frc::SendableChooser<frc::Command*> chooser;
-	static int failConnectCount;
+
 };
 
 
