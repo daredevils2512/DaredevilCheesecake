@@ -55,6 +55,7 @@ private:
 	bool pendingRestart;
 	bool mIsConnected;
 	double lastMessageReceivedTime;
+	long lastReceived = 0;
 	template<typename Out>
 	void splitr(const std::string &s, char delim, Out result);
 	std::vector<std::string> split(const std::string &s, char delim);

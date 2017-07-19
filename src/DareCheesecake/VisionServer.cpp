@@ -51,7 +51,7 @@ void VisionServer::setupServer(){
 		close(socketfd);
 		if(VisionServer::DEBUG_MODE) std::cout << "closing old server socket" << std::endl;
 	}
-	socketfd = socket(AF_INET,SOCK_STREAM,0);
+	socketfd = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
 	int optval = 1;
 	setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
 	sockaddr_in serverAddr;
@@ -95,19 +95,20 @@ void VisionServer::findCamera(){
 	timeval time;
 	time.tv_sec=4;
 	time.tv_usec=0;
-	if(VisionServer::DEBUG_MODE) std::cout << "Finding Camera..." << std::endl;
+	//if(VisionServer::DEBUG_MODE) std::cout << "Finding Camera..." << std::endl;
 	socklen_t sin_size=sizeof(struct sockaddr_in);
 	clientfd=accept(socketfd,(struct sockaddr*)&clientAddr, &sin_size);
-	if(VisionServer::DEBUG_MODE) std::cout << "Camera result: " << clientfd << std::endl;
+	//if(VisionServer::DEBUG_MODE) std::cout << "Camera result: " << clientfd << std::endl;
 
 	mIsConnected = clientfd > -1;
 
 }
 
 void VisionServer::runServerRoutine() {
-	bool didHeartbeat = false;
-	bool didTargets = false;
+	//bool didHeartbeat = false;
+	bool didTargets = !isActive; // dont do targets while we don't need to vision track
 	char receivedStr[2048];
+
 	//fcntl(socketfd, F_GETFL) & ;
 	recv(clientfd,receivedStr,2048,0);
 
@@ -119,15 +120,16 @@ void VisionServer::runServerRoutine() {
 	if(VisionServer::DEBUG_MODE) std::cout << "RAW: " << receivedStr<<std::endl;
 	std::vector<std::string> messages = split(std::string(receivedStr),'\n');
 
-	for(int i = 0; i < messages.size() && (!didTargets||!didHeartbeat); i++) {
-		std::string pch = messages[i];
+	for(int i = 0; i < messages.size() && !didTargets; i++) {
+
 		//pch is now message.
 		//PCH is a json string.
 		// We need to validate it and then handle it.
 		json j;
 		try {
-			std::string pchparsed(pch);
-			j = json::parse(pchparsed);
+			//std::string pchparsed(pch);
+
+			j = json::parse(messages[i]);
 			std::string type = j["type"];
 			std::string message = j["message"];
 			if(type == "targets" && !didTargets){
@@ -150,23 +152,27 @@ void VisionServer::runServerRoutine() {
 						targets.push_back(target);
 					}
 				}
-			}else if(type == "heartbeat" && !didHeartbeat){
-				didHeartbeat = true;
-				// NYI: respond to heartbeat
-				if(VisionServer::DEBUG_MODE) std::cout<<"heartbeat"<<std::endl;
-				char* heartbeatmsg = "{\"type\":\"heartbeat\",\"message\":\"{}\"}";
-				int writeStatus = send(clientfd,heartbeatmsg,strlen(heartbeatmsg),0);
-				if(writeStatus == -1){
-					if(VisionServer::DEBUG_MODE) std::cout << "heartbeat errno: " << errno << std::endl;
-				}
 			}
+
 		}catch(std::exception e){
 			// failed, invalid json??
 			if(VisionServer::DEBUG_MODE) std::cout<<"server routine json error: " << e.what()<< std::endl;
 		}
+	}
 
+	//if(VisionServer::DEBUG_MODE) std::cout<<"heartbeat"<<std::endl;
+	char* heartbeatmsg = "{\"type\":\"heartbeat\",\"message\":\"{}\"}";
+	int writeStatus = send(clientfd,heartbeatmsg,strlen(heartbeatmsg),0);
+	if(writeStatus == -1){
+		if(VisionServer::DEBUG_MODE) std::cout << "heartbeat errno: " << errno << std::endl;
 	}
 	mIsConnected=false;
 	close(clientfd);
 	clientfd = -1;
+	long current = std::chrono::duration_cast< std::chrono::milliseconds >(
+			std::chrono::system_clock::now().time_since_epoch()
+	).count();
+	long diff = 1000l / (lastReceived-current);
+	frc::SmartDashboard::PutNumber("Updates per second",diff);
+	lastReceived = current;
 }

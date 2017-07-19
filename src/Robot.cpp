@@ -9,6 +9,8 @@ void Robot::RobotInit() {
 	// chooser.AddObject("My Auto", new MyAutoCommand());
 	frc::SmartDashboard::PutData("Auto Modes", &chooser);
 	vs.reset(new VisionServer());
+	std::cout<<"Setting up VisionServer"<<std::endl;
+	Robot::vs->setupServer();
 	std::thread(visionLoop).detach();
 }
 
@@ -19,8 +21,7 @@ void Robot::RobotInit() {
  */
 void Robot::visionLoop() {
 	while(true){
-		if(vs->isActive && vs->hasSetup){
-
+		if(vs->hasSetup){
 			visionUpdater();
 		}
 	}
@@ -32,23 +33,31 @@ void Robot::visionUpdater() {
 	if(vs->isConnected()){
 		if(VisionServer::DEBUG_MODE) std::cout<< "connected..." <<std::endl;
 		std::chrono::milliseconds ms = std::chrono::duration_cast< std::chrono::milliseconds >(
-				std::chrono::system_clock::now().time_since_epoch()
-		);
-		long over = ms.count()-lastHit;
-		lastHit = ms.count();
-		frc::SmartDashboard::PutNumber("Vision Loop Speed (ms)",over);
+						std::chrono::system_clock::now().time_since_epoch()
+				);
 		vs->runServerRoutine();
-	}else{
+		long timeTaken = std::chrono::duration_cast< std::chrono::milliseconds >(
+						std::chrono::system_clock::now().time_since_epoch()
+				).count() - ms.count();
+				frc::SmartDashboard::PutNumber("debug timeTaken (ms)",timeTaken);
+	}/*else{
 		if(VisionServer::DEBUG_MODE) std::cout<< "camera is not responding."<<std::endl;
+		std::chrono::milliseconds ms = std::chrono::duration_cast< std::chrono::milliseconds >(
+								std::chrono::system_clock::now().time_since_epoch()
+						);
+
 		if(!AdbBridge::runCommand("shell exit")){
 			vs->setupCamera();
 		}
-	}
+		long timeTaken = std::chrono::duration_cast< std::chrono::milliseconds >(
+										std::chrono::system_clock::now().time_since_epoch()
+								).count() - ms.count();
+								frc::SmartDashboard::PutNumber("debug shell exit (ms)",timeTaken);
+	}*/
 }
 
 void Robot::DisabledInit() {
-	std::cout<<"Setting up VisionServer"<<std::endl;
-	Robot::vs->setupServer();
+
 	Robot::vs->isActive = false;
 
 
