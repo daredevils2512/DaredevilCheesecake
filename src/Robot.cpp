@@ -4,6 +4,7 @@ long Robot::lastHit = 0;
 std::shared_ptr<VisionServer> Robot::vs;
 std::unique_ptr<frc::Command> autonomousCommand;
 frc::SendableChooser<frc::Command*> chooser;
+int Robot::failConnectCount;
 void Robot::RobotInit() {
 	chooser.AddDefault("Default Auto", new ExampleCommand());
 	// chooser.AddObject("My Auto", new MyAutoCommand());
@@ -27,33 +28,40 @@ void Robot::visionLoop() {
 	}
 }
 void Robot::visionUpdater() {
+	std::chrono::milliseconds ms = std::chrono::duration_cast< std::chrono::milliseconds >(
+			std::chrono::system_clock::now().time_since_epoch()
+	);
 	if(!vs->isConnected()){
+
 		vs->findCamera();
+
 	}
 	if(vs->isConnected()){
 		if(VisionServer::DEBUG_MODE) std::cout<< "connected..." <<std::endl;
-		std::chrono::milliseconds ms = std::chrono::duration_cast< std::chrono::milliseconds >(
-						std::chrono::system_clock::now().time_since_epoch()
-				);
+
 		vs->runServerRoutine();
-		long timeTaken = std::chrono::duration_cast< std::chrono::milliseconds >(
-						std::chrono::system_clock::now().time_since_epoch()
-				).count() - ms.count();
-				frc::SmartDashboard::PutNumber("debug timeTaken (ms)",timeTaken);
-	}/*else{
+		failConnectCount = 0;
+
+	}else{
 		if(VisionServer::DEBUG_MODE) std::cout<< "camera is not responding."<<std::endl;
 		std::chrono::milliseconds ms = std::chrono::duration_cast< std::chrono::milliseconds >(
 								std::chrono::system_clock::now().time_since_epoch()
 						);
-
-		if(!AdbBridge::runCommand("shell exit")){
-			vs->setupCamera();
+		if(failConnectCount > 5){
+			if(AdbBridge::reversePortForward(vs->port,vs->port)){
+				vs->setupCamera();
+			}
 		}
+		failConnectCount++;
 		long timeTaken = std::chrono::duration_cast< std::chrono::milliseconds >(
 										std::chrono::system_clock::now().time_since_epoch()
 								).count() - ms.count();
-								frc::SmartDashboard::PutNumber("debug shell exit (ms)",timeTaken);
-	}*/
+								frc::SmartDashboard::PutNumber("debug adb check (ms)",timeTaken);
+	}
+	long timeTaken = std::chrono::duration_cast< std::chrono::milliseconds >(
+			std::chrono::system_clock::now().time_since_epoch()
+	).count() - ms.count();
+	frc::SmartDashboard::PutNumber("debug timeTaken (ms)",timeTaken);
 }
 
 void Robot::DisabledInit() {

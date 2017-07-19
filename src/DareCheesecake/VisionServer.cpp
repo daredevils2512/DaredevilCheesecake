@@ -110,9 +110,9 @@ void VisionServer::runServerRoutine() {
 	char receivedStr[2048];
 
 	//fcntl(socketfd, F_GETFL) & ;
-	recv(clientfd,receivedStr,2048,0);
+	int recvNum = recv(clientfd,receivedStr,2048,0);
 
-	if(VisionServer::DEBUG_MODE) {
+	if(VisionServer::DEBUG_MODE && recvNum == -1) {
 		std::cout << "-----------------------"<<std::endl;
 		std::cout << "errno: " << errno<<std::endl;
 		std::cout << "-----------------------"<<std::endl;
@@ -172,7 +172,7 @@ void VisionServer::runServerRoutine() {
 	long current = std::chrono::duration_cast< std::chrono::milliseconds >(
 			std::chrono::system_clock::now().time_since_epoch()
 	).count();
-	long diff = 1000l / (lastReceived-current);
-	frc::SmartDashboard::PutNumber("Updates per second",diff);
+	long diff = current - lastReceived;
+	frc::SmartDashboard::PutNumber("Millis between updates",diff);
 	lastReceived = current;
 }

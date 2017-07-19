@@ -15,12 +15,12 @@
 class AdbBridge {
 public:
 	static bool runCommand(const char* command);
-	static void start();
-	static void stop();
+	static bool start();
+	static bool stop();
 	static void restartAdb();
-	static void portForward(int local_post, int remote_port);
-	static void reversePortForward(int remote_port, int local_port);
-	static void restartApp();
+	static bool portForward(int local_post, int remote_port);
+	static bool reversePortForward(int remote_port, int local_port);
+	static bool restartApp();
 };
 
 #endif /* SRC_DARECHEESECAKE_ADBBRIDGE_H_ */

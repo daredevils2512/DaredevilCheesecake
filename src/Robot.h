@@ -58,6 +58,7 @@ public:
 private:
 	std::unique_ptr<frc::Command> autonomousCommand;
 	frc::SendableChooser<frc::Command*> chooser;
+	static int failConnectCount;
 };
 
 

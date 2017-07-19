@@ -19,27 +19,26 @@ bool AdbBridge::runCommand(const char* command){
 	}
 	return true;
 }
-void AdbBridge::start(){
-	runCommand("start-server");
+bool AdbBridge::start(){
+	return runCommand("start-server");
 }
-void AdbBridge::stop(){
-	runCommand("kill-server");
+bool AdbBridge::stop(){
+	return runCommand("kill-server");
 }
 void AdbBridge::restartAdb(){
 	stop();
 	start();
 }
-void AdbBridge::portForward(int local_port, int remote_port){
+bool AdbBridge::portForward(int local_port, int remote_port){
 	std::ostringstream test;
 	test << "forward tcp:" << local_port << " tcp:" << remote_port;
-	runCommand(test.str().c_str());
+	return runCommand(test.str().c_str());
 }
-void AdbBridge::reversePortForward(int remote_port, int local_port){
+bool AdbBridge::reversePortForward(int remote_port, int local_port){
 	std::ostringstream test;
 	test << "reverse tcp:" << remote_port << " tcp:" << local_port;
-	runCommand(test.str().c_str());
+	return runCommand(test.str().c_str());
 }
-void AdbBridge::restartApp(){
-	runCommand("shell am force-stop com.team.cheezdroid");
-	runCommand("shell am start com.team254.cheezdroid/com.team254.cheezdroid.VisionTrackerActivity");
+bool AdbBridge::restartApp(){
+	return runCommand("shell am force-stop com.team.cheezdroid") && runCommand("shell am start com.team254.cheezdroid/com.team254.cheezdroid.VisionTrackerActivity");
 }

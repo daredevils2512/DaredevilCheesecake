@@ -32,7 +32,7 @@
 class VisionServer {
 
 public:
-	static const bool DEBUG_MODE=true;
+	static const bool DEBUG_MODE=false;
 	VisionServer();
 	struct TargetInfo {
 		double y;
@@ -48,10 +48,10 @@ public:
 	std::vector<TargetInfo> targets;
 	bool hasSetup;
 	bool isActive;
+	const int port = 8254; // Port. Defined by Team254. Not changing it rn.
 private:
 	int socketfd; // Socket instance ID, used in socket methods.
 	int clientfd;
-	const int port = 8254; // Port. Defined by Team254. Not changing it rn.
 	bool pendingRestart;
 	bool mIsConnected;
 	double lastMessageReceivedTime;
