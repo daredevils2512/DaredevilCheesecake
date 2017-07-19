@@ -17,8 +17,6 @@
 class Robot: public frc::IterativeRobot {
 public:
 	static long lastHit;
-	static std::shared_ptr<VisionServer> vs;
-
     //static std::thread visionThread;
 	void RobotInit() override;
 

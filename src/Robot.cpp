@@ -1,16 +1,14 @@
 #include "Robot.h"
 
 long Robot::lastHit = 0;
-std::shared_ptr<VisionServer> Robot::vs;
 std::unique_ptr<frc::Command> autonomousCommand;
 frc::SendableChooser<frc::Command*> chooser;
 void Robot::RobotInit() {
 	chooser.AddDefault("Default Auto", new ExampleCommand());
 	// chooser.AddObject("My Auto", new MyAutoCommand());
 	frc::SmartDashboard::PutData("Auto Modes", &chooser);
-	vs.reset(new VisionServer());
 	std::cout<<"Setting up VisionServer"<<std::endl;
-	Robot::vs->setupServer();
+	VisionServer::setupServer();
 	std::thread(VisionServer::visionLoop).detach();
 }
 
@@ -23,7 +21,7 @@ void Robot::RobotInit() {
 
 void Robot::DisabledInit() {
 
-	Robot::vs->isActive = false;
+	VisionServer::isActive = false;
 
 
 }
@@ -52,7 +50,7 @@ void Robot::AutonomousInit()  {
 	else {
 		autonomousCommand.reset(new ExampleCommand());
 	} */
-	Robot::vs->isActive = true;
+	VisionServer::isActive = true;
 	autonomousCommand.reset(chooser.GetSelected());
 
 	if (autonomousCommand.get() != nullptr) {
@@ -69,7 +67,7 @@ void Robot::TeleopInit()  {
 	// teleop starts running. If you want the autonomous to
 	// continue until interrupted by another command, remove
 	// this line or comment it out.
-	Robot::vs->isActive = true;
+	VisionServer::isActive = true;
 	if (autonomousCommand != nullptr) {
 		autonomousCommand->Cancel();
 	}
@@ -80,10 +78,10 @@ void Robot::TeleopPeriodic()  {
 
 
 	frc::Scheduler::GetInstance()->Run();
-	frc::SmartDashboard::PutNumber("Targets",vs->targets.size());
-	frc::SmartDashboard::PutBoolean("setupSucceeded",vs->hasSetup);
-	frc::SmartDashboard::PutBoolean("isActive",vs->isActive);
-	frc::SmartDashboard::PutBoolean("isConnected",vs->isConnected());
+	frc::SmartDashboard::PutNumber("Targets",VisionServer::targets.size());
+	frc::SmartDashboard::PutBoolean("setupSucceeded",VisionServer::hasSetup);
+	frc::SmartDashboard::PutBoolean("isActive",VisionServer::isActive);
+	frc::SmartDashboard::PutBoolean("isConnected",VisionServer::isConnected());
 
 }
 

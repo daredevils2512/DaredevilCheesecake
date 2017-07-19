@@ -10,9 +10,20 @@
 #include "json.hpp"
 using json = nlohmann::json;
 
-VisionServer::VisionServer(){
-	resetVars();
-}
+//PUBLIC
+std::vector<VisionServer::TargetInfo> VisionServer::targets;
+bool VisionServer::hasSetup;
+bool VisionServer::isActive;
+const int VisionServer::port;
+//PRIVATE
+int VisionServer::socketfd;
+int VisionServer::clientfd;
+bool VisionServer::pendingRestart;
+bool VisionServer::mIsConnected;
+double VisionServer::lastMessageReceivedTime;
+long VisionServer::lastReceived;
+int VisionServer::failConnectCount;
+
 void VisionServer::resetVars() {
 	socketfd=-1;
 	clientfd = -1;
@@ -52,6 +63,7 @@ void VisionServer::setupServer(){
 		close(socketfd);
 		if(VisionServer::DEBUG_MODE) std::cout << "closing old server socket" << std::endl;
 	}
+	resetVars();
 	socketfd = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
 	int optval = 1;
 	setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
@@ -179,25 +191,24 @@ void VisionServer::runServerRoutine() {
 }
 void VisionServer::visionLoop() {
 	while(true){
-		if(Robot::vs->hasSetup){
+		if(hasSetup){
 			visionUpdater();
 		}
 	}
 }
-int VisionServer::failConnectCount;
 void VisionServer::visionUpdater() {
 	std::chrono::milliseconds ms = std::chrono::duration_cast< std::chrono::milliseconds >(
 			std::chrono::system_clock::now().time_since_epoch()
 	);
-	if(!Robot::vs->isConnected()){
+	if(!isConnected()){
 
-		Robot::vs->findCamera();
+		findCamera();
 
 	}
-	if(Robot::vs->isConnected()){
+	if(isConnected()){
 		if(VisionServer::DEBUG_MODE) std::cout<< "connected..." <<std::endl;
 
-		Robot::vs->runServerRoutine();
+		runServerRoutine();
 		failConnectCount = 0;
 
 	}else{
@@ -206,8 +217,8 @@ void VisionServer::visionUpdater() {
 								std::chrono::system_clock::now().time_since_epoch()
 						);
 		if(failConnectCount > 5){
-			if(AdbBridge::reversePortForward(Robot::vs->port,Robot::vs->port)){
-				Robot::vs->setupCamera();
+			if(AdbBridge::reversePortForward(port,port)){
+				setupCamera();
 			}
 		}
 		failConnectCount++;
@@ -221,3 +232,4 @@ void VisionServer::visionUpdater() {
 	).count() - ms.count();
 	frc::SmartDashboard::PutNumber("debug timeTaken (ms)",timeTaken);
 }
+
