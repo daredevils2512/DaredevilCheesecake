@@ -6,6 +6,8 @@
  */
 
 #include <DareCheesecake/VisionServer.h>
+#include <chrono>
+#include <thread>
 #include "../Robot.h"
 #include "json.hpp"
 using json = nlohmann::json;
@@ -212,14 +214,17 @@ void VisionServer::visionUpdater() {
 		failConnectCount = 0;
 
 	}else{
-		if(VisionServer::DEBUG_MODE) std::cout<< "camera is not responding."<<std::endl;
+
 		std::chrono::milliseconds ms = std::chrono::duration_cast< std::chrono::milliseconds >(
 								std::chrono::system_clock::now().time_since_epoch()
 						);
-		if(failConnectCount > 5){
+		if(failConnectCount > 300){
+			if(VisionServer::DEBUG_MODE) std::cout<< "camera is not responding."<<std::endl;
 			if(AdbBridge::reversePortForward(port,port)){
 				setupCamera();
 			}
+		}else{
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
 		failConnectCount++;
 		long timeTaken = std::chrono::duration_cast< std::chrono::milliseconds >(
